@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:okta_flutter/providers/auth.dart';
-import 'package:okta_flutter/classes/screen_arguments.dart';
+import 'package:okta_flutter/utils/screen_arguments.dart';
+import 'package:okta_flutter/utils/validate.dart';
 import 'package:okta_flutter/styles/styles.dart';
 import 'package:okta_flutter/widgets/styled_flat_button.dart';
 
@@ -40,20 +41,6 @@ class PasswordResetFormState extends State<PasswordResetForm> {
   String message = '';
 
   Map response = new Map();
-
-  String validateEmail(String value) {
-    if (value.trim().isEmpty) {
-      return 'Email is required.';
-    }
-    Pattern pattern =
-        r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
-    RegExp regex = new RegExp(pattern);
-    if (!regex.hasMatch(value.trim())) {
-      return 'Valid email required.';
-    }
-    email = value.trim();
-    return null;
-  }
 
   Future<void> submit() async {
     final form = _formKey.currentState;
@@ -101,7 +88,10 @@ class PasswordResetFormState extends State<PasswordResetForm> {
             decoration: Styles.input.copyWith(
               hintText: 'Email',
             ),
-            validator: validateEmail,
+            validator: (value) {
+              email = value.trim();
+              return Validate.validateEmail(value);
+            }
           ),
           SizedBox(height: 15.0),
           StyledFlatButton(
