@@ -45,16 +45,11 @@ class LogInFormState extends State<LogInForm> {
   Future<void> submit() async {
     final form = _formKey.currentState;
     if (form.validate()) {
+      print(email);
+      print(password);
+      print(context);
       await Provider.of<AuthProvider>(context).login(email, password);
     }
-  }
-
-  void gotoRegister(BuildContext context) {
-    Navigator.pushNamed(context, '/register');
-  }
-
-  void gotoPasswordReset(BuildContext context) {
-    Navigator.pushNamed(context, '/password-reset');
   }
 
   @override
@@ -128,7 +123,9 @@ class LogInFormState extends State<LogInForm> {
                     text: 'Register.',
                     style: Styles.p.copyWith(color: Palette.accent500),
                     recognizer: new TapGestureRecognizer()
-                      ..onTap = () => gotoRegister(context),
+                      ..onTap = () => {
+                        Navigator.pushNamed(context, '/register'),
+                      }
                   ),
                 ],
               ),
@@ -141,7 +138,9 @@ class LogInFormState extends State<LogInForm> {
                 text: 'Forgot Your Password?',
                 style: Styles.p.copyWith(color: Palette.accent500),
                 recognizer: new TapGestureRecognizer()
-                  ..onTap = () => gotoPasswordReset(context),
+                  ..onTap = () => {
+                    Navigator.pushNamed(context, '/password-reset'),
+                  }
               ),
             ),
           ),

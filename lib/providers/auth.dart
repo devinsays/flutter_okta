@@ -3,25 +3,35 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
+import 'package:okta_flutter/models/user.dart';
+
 enum Status { Uninitialized, Authenticated, Authenticating, Unauthenticated }
 
 class AuthProvider with ChangeNotifier {
 
   Status _status = Status.Uninitialized;
   String _token;
-  String _name;
+  User _user;
   String _notification;
 
   Status get status => _status;
   String get token => _token;
-  String get name => _name;
+  User get user => _user;
   String get notification => _notification;
 
-  final String api = 'https://laravelreact.com/api/v1/auth';
+  // Request headers.
+  final Map<String, String> headers = {
+    'Content-type': 'application/json', 
+    'Accept': 'application/json',
+  };
+
+  // Update to use with your own Okta app.
+  final String api = 'https://nanoapp.okta.com/api/v1';
 
   initAuthProvider() async {
     String token = await getToken();
     if (token != null) {
+      _user = await getUser();
       _token = token;
       _status = Status.Authenticated;
     } else {
@@ -31,24 +41,39 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<bool> login(String email, String password) async {
+
     _status = Status.Authenticating;
     _notification = '';
     notifyListeners();
 
-    final url = "$api/login";
+    final url = "$api/authn";
 
     Map<String, String> body = {
-      'email': email,
-      'password': password,
+      "username": email,
+      "password": password
     };
 
-    final response = await http.post(url, body: body,);
+    final response = await http.post(
+      url,
+      body: json.encode(body),
+      headers: {
+        'Content-type': 'application/json', 
+        'Accept': 'application/json'
+      }
+    );
 
     if (response.statusCode == 200) {
       Map<String, dynamic> apiResponse = json.decode(response.body);
+
       _status = Status.Authenticated;
-      _token = apiResponse['access_token'];
-      await storeUserData(apiResponse);
+      _token = apiResponse['sessionToken'];
+      _user = User.fromApiResponse(apiResponse);
+
+      // Save values to local storage.
+      SharedPreferences storage = await SharedPreferences.getInstance();
+      await storage.setString('token', _token);
+      await storage.setString('user', json.encode(_user.toJson()));
+
       notifyListeners();
       return true;
     }
@@ -136,17 +161,20 @@ class AuthProvider with ChangeNotifier {
     return result;
   }
 
-  storeUserData(apiResponse) async {
-    SharedPreferences storage = await SharedPreferences.getInstance();
-    await storage.setString('token', apiResponse['access_token']);
-    await storage.setString('name', apiResponse['user']['name']);
-  }
-
   Future<String> getToken() async {
     SharedPreferences storage = await SharedPreferences.getInstance();
     String token = storage.getString('token');
     return token;
   }
+
+  Future<User> getUser() async {
+    SharedPreferences storage = await SharedPreferences.getInstance();
+    String userString = storage.getString('user');
+    Map<String, dynamic> storedUser = json.decode(userString);
+    User user = User.fromJson(storedUser);
+    return user;
+  }
+
 
   logOut([bool tokenExpired = false]) async {
     _status = Status.Unauthenticated;

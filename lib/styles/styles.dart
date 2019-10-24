@@ -15,16 +15,14 @@ class Styles {
 
   static TextStyle p = defaultStyle.copyWith(
     fontSize: 16.0,
-    height: 21 / 16,
   );
 
   static TextStyle label = defaultStyle.copyWith(
     fontWeight: FontWeight.w500,
-    fontSize: 10.0,
-    height: 13 / 10,
+    fontSize: 16.0,
   );
 
-  static TextStyle formError = defaultStyle.copyWith(
+  static TextStyle error = defaultStyle.copyWith(
     fontWeight: FontWeight.w500,
     fontSize: 11.0,
     height: 14 / 11,
