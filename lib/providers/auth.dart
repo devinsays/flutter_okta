@@ -8,7 +8,6 @@ import 'package:okta_flutter/models/user.dart';
 enum Status { Uninitialized, Authenticated, Authenticating, Unauthenticated }
 
 class AuthProvider with ChangeNotifier {
-
   Status _status = Status.Uninitialized;
   String _token;
   User _user;
@@ -41,7 +40,6 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<bool> login(String email, String password) async {
-
     _status = Status.Authenticating;
     _notification = '';
     notifyListeners();
@@ -87,6 +85,8 @@ class AuthProvider with ChangeNotifier {
     return false;
   }
 
+  // @TODO: This is still in progress.
+  // Looks like https://developer.okta.com/docs/reference/api/users/#create-user endpoint can be used.
   Future<Map> register(String name, String email, String password, String passwordConfirm) async {
     final url = "$api/register";
 
@@ -164,7 +164,6 @@ class AuthProvider with ChangeNotifier {
     return user;
   }
 
-
   logOut([bool tokenExpired = false]) async {
     _status = Status.Unauthenticated;
     if (tokenExpired == true) {
@@ -175,5 +174,4 @@ class AuthProvider with ChangeNotifier {
     SharedPreferences storage = await SharedPreferences.getInstance();
     await storage.clear();
   }
-
 }
