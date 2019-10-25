@@ -52,6 +52,9 @@ class LogInFormState extends State<LogInForm> {
 
   @override
   Widget build(BuildContext context) {
+
+    Status status = Provider.of<AuthProvider>(context).status;
+    bool loading = status == Status.Authenticating;
     
     return Form(
       key: _formKey,
@@ -92,6 +95,7 @@ class LogInFormState extends State<LogInForm> {
           SizedBox(height: 15.0),
           StyledFlatButton(
             'Sign In',
+            loading: loading,
             onPressed: submit,
           ),
           SizedBox(height: 20.0),
