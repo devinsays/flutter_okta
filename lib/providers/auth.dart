@@ -22,11 +22,11 @@ class AuthProvider with ChangeNotifier {
   // Request headers.
   final Map<String, String> headers = {
     'Content-type': 'application/json', 
-    'Accept': 'application/json',
+    'Accept': 'application/json'
   };
 
   // Update to use with your own Okta app.
-  final String api = 'https://nanoapp.okta.com/api/v1';
+  final String api = 'https://nanoapp.okta.com/api/v1/authn';
 
   initAuthProvider() async {
     String token = await getToken();
@@ -46,20 +46,15 @@ class AuthProvider with ChangeNotifier {
     _notification = '';
     notifyListeners();
 
-    final url = "$api/authn";
-
     Map<String, String> body = {
       "username": email,
       "password": password
     };
 
     final response = await http.post(
-      url,
+      api,
       body: json.encode(body),
-      headers: {
-        'Content-type': 'application/json', 
-        'Accept': 'application/json'
-      }
+      headers: headers
     );
 
     if (response.statusCode == 200) {
@@ -68,6 +63,7 @@ class AuthProvider with ChangeNotifier {
       _status = Status.Authenticated;
       _token = apiResponse['sessionToken'];
       _user = User.fromApiResponse(apiResponse);
+      _notification = null;
 
       // Save values to local storage.
       SharedPreferences storage = await SharedPreferences.getInstance();
@@ -133,32 +129,25 @@ class AuthProvider with ChangeNotifier {
     return result;
   }
 
-  passwordReset(String email) async {
-    final url = "$api/forgot-password";
+  Future<bool> passwordReset(String email) async {
+    final url = "$api/recovery/password";
 
     Map<String, String> body = {
-      'email': email,
+      "username": email,
+      "factorType": "EMAIL"
     };
 
-    Map<String, dynamic> result = {
-      "reset": false,
-      "message": 'Unknown error.'
-    };
-
-    final response = await http.post( url, body: body, );
+    final response = await http.post( url, body: json.encode(body), headers: headers );
+    Map<String, dynamic> apiResponse = json.decode(response.body);
+    print(apiResponse);
 
     if (response.statusCode == 200) {
-      result['reset'] = true;
-      result['message'] = "Reset successful. Please check your inbox.";
-      return result;
+      _notification = 'Reset sent. Please check your inbox.';
+      notifyListeners();
+      return true;
     }
 
-    if (response.statusCode == 422) {
-      result['message'] = "We couldn't find an account with that email.";
-      return result;
-    }
-
-    return result;
+    return false;
   }
 
   Future<String> getToken() async {

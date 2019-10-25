@@ -40,23 +40,15 @@ class PasswordResetFormState extends State<PasswordResetForm> {
   String password;
   String message = '';
 
-  Map response = new Map();
-
   Future<void> submit() async {
     final form = _formKey.currentState;
     if (form.validate()) {
-      response = await Provider.of<AuthProvider>(context).passwordReset(email);
-      if (response['reset']) {
-        Navigator.pushReplacementNamed(
-          context,
-          '/login',
-          arguments: ScreenArguments(
-            response['message'],
-          ),
-        );
+      bool success = await Provider.of<AuthProvider>(context).passwordReset(email);
+      if (success) {
+        Navigator.pushReplacementNamed( context, '/login' );
       } else {
         setState(() {
-          message = response['message'];
+          message = 'An error occurred during password reset.';
         });
       }
     }
