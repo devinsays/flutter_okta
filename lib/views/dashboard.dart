@@ -12,8 +12,6 @@ class Dashboard extends StatelessWidget {
     String token = Provider.of<AuthProvider>(context).token;
     User user = Provider.of<AuthProvider>(context).user;
 
-    print(user);
-
     Widget dataRow(String label, String value) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

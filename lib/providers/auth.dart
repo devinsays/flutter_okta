@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import 'package:okta_flutter/models/user.dart';
+import 'package:okta_flutter/utils/api_client.dart';
+import 'package:okta_flutter/widgets/notification_text.dart';
 
 enum Status { Uninitialized, Authenticated, Authenticating, Unauthenticated }
 
@@ -11,21 +13,18 @@ class AuthProvider with ChangeNotifier {
   Status _status = Status.Uninitialized;
   String _token;
   User _user;
-  String _notification;
+  NotificationText _notification;
 
   Status get status => _status;
   String get token => _token;
   User get user => _user;
-  String get notification => _notification;
-
-  // Request headers.
-  final Map<String, String> headers = {
-    'Content-type': 'application/json', 
-    'Accept': 'application/json'
-  };
+  NotificationText get notification => _notification;
 
   // Update to use with your own Okta app.
   final String api = 'https://nanoapp.okta.com/api/v1/authn';
+
+  // Creates a client with application/json headers set.
+  final apiClient = ApiClient();
 
   initAuthProvider() async {
     String token = await getToken();
@@ -41,7 +40,7 @@ class AuthProvider with ChangeNotifier {
 
   Future<bool> login(String email, String password) async {
     _status = Status.Authenticating;
-    _notification = '';
+    _notification = null;
     notifyListeners();
 
     Map<String, String> body = {
@@ -49,11 +48,7 @@ class AuthProvider with ChangeNotifier {
       "password": password
     };
 
-    final response = await http.post(
-      api,
-      body: json.encode(body),
-      headers: headers
-    );
+    final response = await apiClient.post(api, body: json.encode(body));
 
     if (response.statusCode == 200) {
       Map<String, dynamic> apiResponse = json.decode(response.body);
@@ -61,7 +56,6 @@ class AuthProvider with ChangeNotifier {
       _status = Status.Authenticated;
       _token = apiResponse['sessionToken'];
       _user = User.fromApiResponse(apiResponse);
-      _notification = null;
 
       // Save values to local storage.
       SharedPreferences storage = await SharedPreferences.getInstance();
@@ -74,13 +68,13 @@ class AuthProvider with ChangeNotifier {
 
     if (response.statusCode == 401) {
       _status = Status.Unauthenticated;
-      _notification = 'Invalid email or password.';
+      _notification = NotificationText('Invalid email or password.');
       notifyListeners();
       return false;
     }
 
     _status = Status.Unauthenticated;
-    _notification = 'Server error.';
+    _notification = NotificationText('Server error.');
     notifyListeners();
     return false;
   }
@@ -102,7 +96,7 @@ class AuthProvider with ChangeNotifier {
       "message": 'Unknown error.'
     };
 
-    final response = await http.post( url, body: body, );
+    final response = await http.post(url, body: body);
 
     if (response.statusCode == 200) {
       result['success'] = true;
@@ -137,12 +131,10 @@ class AuthProvider with ChangeNotifier {
       "factorType": "EMAIL"
     };
 
-    final response = await http.post( url, body: json.encode(body), headers: headers );
-    Map<String, dynamic> apiResponse = json.decode(response.body);
-    print(apiResponse);
+    final response = await apiClient.post(url, body: json.encode(body));
 
     if (response.statusCode == 200) {
-      _notification = 'Reset sent. Please check your inbox.';
+      _notification = NotificationText('Reset sent. Please check your inbox.', type: 'info');
       notifyListeners();
       return true;
     }
@@ -167,7 +159,7 @@ class AuthProvider with ChangeNotifier {
   logOut([bool tokenExpired = false]) async {
     _status = Status.Unauthenticated;
     if (tokenExpired == true) {
-      _notification = 'Session expired. Please log in again.';
+      _notification = NotificationText('Session expired. Please log in again.', type: 'info');
     }
     notifyListeners();
 

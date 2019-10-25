@@ -3,11 +3,11 @@ import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
 
 import 'package:okta_flutter/providers/auth.dart';
-import 'package:okta_flutter/utils/screen_arguments.dart';
 import 'package:okta_flutter/utils/validate.dart';
 import 'package:okta_flutter/styles/styles.dart';
 import 'package:okta_flutter/styles/palette.dart';
 import 'package:okta_flutter/widgets/styled_flat_button.dart';
+import 'package:okta_flutter/widgets/notification_text.dart';
 
 class LogIn extends StatelessWidget {
   @override
@@ -15,6 +15,8 @@ class LogIn extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Log In'),
+        // Prevents back button from showing.
+        leading: Container(),
       ),
       body: Center(
         child: Container(
@@ -40,28 +42,16 @@ class LogInFormState extends State<LogInForm> {
 
   String email;
   String password;
-  String message = '';
 
   Future<void> submit() async {
     final form = _formKey.currentState;
     if (form.validate()) {
-      print(email);
-      print(password);
-      print(context);
       await Provider.of<AuthProvider>(context).login(email, password);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-
-    final ScreenArguments args = ModalRoute.of(context).settings.arguments;
-
-    if (args != null) {
-      setState(() {
-        message = args.message;
-      });
-    }
     
     return Form(
       key: _formKey,
@@ -76,13 +66,7 @@ class LogInFormState extends State<LogInForm> {
           ),
           SizedBox(height: 10.0),
           Consumer<AuthProvider>(
-            builder: (context, provider, child) => Text(
-              provider.notification ?? this.message ?? '',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.red,
-              ),
-            ),
+            builder: (context, provider, child) => provider.notification ?? NotificationText('')
           ),
           SizedBox(height: 20.0),
           TextFormField(
