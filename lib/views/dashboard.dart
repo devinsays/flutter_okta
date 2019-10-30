@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_appauth/flutter_appauth.dart';
 
 import 'package:okta_flutter/providers/auth.dart';
-import 'package:okta_flutter/models/user.dart';
 import 'package:okta_flutter/styles/styles.dart';
 import 'package:okta_flutter/widgets/styled_flat_button.dart';
 
 class Dashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    String token = Provider.of<AuthProvider>(context).token;
-    User user = Provider.of<AuthProvider>(context).user;
+    AuthorizationTokenResponse authorization =
+        Provider.of<AuthProvider>(context).authorization;
 
     Widget dataRow(String label, String value) {
       return Column(
@@ -29,23 +29,21 @@ class Dashboard extends StatelessWidget {
         title: Text('Okta App'),
       ),
       body: Padding(
-        padding: EdgeInsets.fromLTRB(30.0, 0.0, 30.0, 0.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+        padding: EdgeInsets.fromLTRB(30.0, 30.0, 30.0, 0.0),
+        child: ListView(
+          children: <Widget>[
             Text(
               'Okta Information',
               textAlign: TextAlign.center,
               style: Styles.h1,
             ),
             SizedBox(height: 45),
-            dataRow('Token', token),
-            dataRow('ID', user.id),
-            dataRow('Login', user.login),
-            dataRow('Name', '${user.firstName} ${user.lastName}'),
-            dataRow('Locale', user.locale),
-            dataRow('Time Zone', user.timeZone),
+            dataRow('accessToken', authorization.accessToken),
+            dataRow('refreshToken', authorization.refreshToken),
+            dataRow('idToken', authorization.idToken),
+            dataRow('tokenType', authorization.tokenType),
+            dataRow('accessTokenExpirationDateTime',
+                authorization.accessTokenExpirationDateTime.toString()),
             SizedBox(height: 30),
             StyledFlatButton(
               'Log Out',
