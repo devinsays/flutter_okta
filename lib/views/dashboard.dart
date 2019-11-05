@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:okta_flutter/providers/auth.dart';
-import 'package:okta_flutter/models/user.dart';
 import 'package:okta_flutter/styles/styles.dart';
 import 'package:okta_flutter/widgets/styled_flat_button.dart';
 
@@ -10,7 +9,6 @@ class Dashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String token = Provider.of<AuthProvider>(context).token;
-    User user = Provider.of<AuthProvider>(context).user;
 
     Widget dataRow(String label, String value) {
       return Column(
@@ -41,11 +39,6 @@ class Dashboard extends StatelessWidget {
             ),
             SizedBox(height: 45),
             dataRow('Token', token),
-            dataRow('ID', user.id),
-            dataRow('Login', user.login),
-            dataRow('Name', '${user.firstName} ${user.lastName}'),
-            dataRow('Locale', user.locale),
-            dataRow('Time Zone', user.timeZone),
             SizedBox(height: 30),
             StyledFlatButton(
               'Log Out',

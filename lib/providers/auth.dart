@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
-import 'package:okta_flutter/models/user.dart';
 import 'package:okta_flutter/utils/api_client.dart';
 import 'package:okta_flutter/widgets/notification_text.dart';
 
@@ -12,16 +11,17 @@ enum Status { Uninitialized, Authenticated, Authenticating, Unauthenticated }
 class AuthProvider with ChangeNotifier {
   Status _status = Status.Uninitialized;
   String _token;
-  User _user;
+  String _refreshToken;
   NotificationText _notification;
 
   Status get status => _status;
   String get token => _token;
-  User get user => _user;
+  String get refreshToken => _refreshToken;
   NotificationText get notification => _notification;
 
   // Update to use with your own Okta app.
-  final String api = 'https://nanoapp.okta.com/api/v1/authn';
+  final String api = 'https://nanoapp.oktapreview.com/oauth2/auso4gulrq9ulEb7O0h7/v1/token';
+  final String clientId = '0oao49otuaQgpXWtD0h7';
 
   // Creates a client with application/json headers set.
   final apiClient = ApiClient();
@@ -29,7 +29,6 @@ class AuthProvider with ChangeNotifier {
   initAuthProvider() async {
     String token = await getToken();
     if (token != null) {
-      _user = await getUser();
       _token = token;
       _status = Status.Authenticated;
     } else {
@@ -44,23 +43,27 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     Map<String, String> body = {
+      "grant_type": "password",
+      "scope": "openid offline_access",
+      "client_id": clientId,
       "username": email,
       "password": password
     };
 
     final response = await apiClient.post(api, body: json.encode(body));
 
+    print(json.decode(response.body));
+
     if (response.statusCode == 200) {
       Map<String, dynamic> apiResponse = json.decode(response.body);
 
       _status = Status.Authenticated;
-      _token = apiResponse['sessionToken'];
-      _user = User.fromApiResponse(apiResponse);
+      _token = apiResponse['access_token'];
+      _refreshToken = apiResponse['refresh_token'];
 
       // Save values to local storage.
       SharedPreferences storage = await SharedPreferences.getInstance();
       await storage.setString('token', _token);
-      await storage.setString('user', json.encode(_user.toJson()));
 
       notifyListeners();
       return true;
@@ -77,50 +80,6 @@ class AuthProvider with ChangeNotifier {
     _notification = NotificationText('Server error.');
     notifyListeners();
     return false;
-  }
-
-  // @TODO: This is still in progress.
-  // Looks like https://developer.okta.com/docs/reference/api/users/#create-user endpoint can be used.
-  Future<Map> register(String name, String email, String password, String passwordConfirm) async {
-    final url = "$api/register";
-
-    Map<String, String> body = {
-      'name': name,
-      'email': email,
-      'password': password,
-      'password_confirmation': passwordConfirm,
-    };
-
-    Map<String, dynamic> result = {
-      "success": false,
-      "message": 'Unknown error.'
-    };
-
-    final response = await http.post(url, body: body);
-
-    if (response.statusCode == 200) {
-      result['success'] = true;
-      result['message'] = 'Registration successful, please log in.';
-      return result;
-    }
-
-    Map apiResponse = json.decode(response.body);
-
-    if (response.statusCode == 422) {
-      if (apiResponse['errors'].containsKey('email')) {
-        result['message'] = apiResponse['errors']['email'][0];
-        return result;
-      }
-
-      if (apiResponse['errors'].containsKey('password')) {
-        result['message'] = apiResponse['errors']['password'][0];
-        return result;
-      }
-
-      return result;
-    }
-
-    return result;
   }
 
   Future<bool> passwordReset(String email) async {
@@ -146,14 +105,6 @@ class AuthProvider with ChangeNotifier {
     SharedPreferences storage = await SharedPreferences.getInstance();
     String token = storage.getString('token');
     return token;
-  }
-
-  Future<User> getUser() async {
-    SharedPreferences storage = await SharedPreferences.getInstance();
-    String userString = storage.getString('user');
-    Map<String, dynamic> storedUser = json.decode(userString);
-    User user = User.fromJson(storedUser);
-    return user;
   }
 
   logOut([bool tokenExpired = false]) async {
