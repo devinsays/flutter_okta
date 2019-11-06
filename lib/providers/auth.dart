@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 
 import 'package:okta_flutter/utils/api_client.dart';
@@ -18,6 +18,9 @@ class AuthProvider with ChangeNotifier {
   String get refreshToken => _refreshToken;
   NotificationText get notification => _notification;
 
+  // Secure storage
+  final storage = new FlutterSecureStorage();
+
   // Update to use with your own Okta app.
   final String api = 'https://nanoapp.oktapreview.com';
   final String applicationId = 'auso4gulrq9ulEb7O0h7';
@@ -27,8 +30,13 @@ class AuthProvider with ChangeNotifier {
   final apiClient = ApiClient();
 
   initAuthProvider() async {
-    await hydrateTokens();
-    if (_accessToken != null && _refreshToken != null) {
+    Map<String, String> tokens = await storage.readAll();
+    String accessToken = tokens['accessToken'];
+    String refreshToken = tokens['refreshToken'];
+
+    if ( accessToken != null && refreshToken != null) {
+      _accessToken = accessToken;
+      _refreshToken = refreshToken;
       _status = Status.Authenticated;
     } else {
       _status = Status.Unauthenticated;
@@ -63,9 +71,8 @@ class AuthProvider with ChangeNotifier {
       _refreshToken = apiResponse['refresh_token'];
 
       // Save values to local storage.
-      SharedPreferences storage = await SharedPreferences.getInstance();
-      await storage.setString('access_token', _accessToken);
-      await storage.setString('refresh_token', _refreshToken);
+      await storage.write(key: 'accessToken', value: _accessToken);
+      await storage.write(key: 'refreshToken', value: _refreshToken);
 
       notifyListeners();
       return true;
@@ -103,15 +110,6 @@ class AuthProvider with ChangeNotifier {
     return false;
   }
 
-  // Checks for tokens in local storage and loads them into state.
-  Future<void> hydrateTokens() async {
-    SharedPreferences storage = await SharedPreferences.getInstance();
-    String accessToken = storage.getString('accessToken');
-    String refreshToken = storage.getString('refreshToken');
-    _accessToken = accessToken;
-    _refreshToken = refreshToken;
-  }
-
   logOut([bool tokenExpired = false]) async {
     _status = Status.Unauthenticated;
     if (tokenExpired == true) {
@@ -119,7 +117,6 @@ class AuthProvider with ChangeNotifier {
     }
     notifyListeners();
 
-    SharedPreferences storage = await SharedPreferences.getInstance();
-    await storage.clear();
+    await storage.deleteAll();
   }
 }
