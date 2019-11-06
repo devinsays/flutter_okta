@@ -8,7 +8,8 @@ import 'package:okta_flutter/widgets/styled_flat_button.dart';
 class Dashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    String token = Provider.of<AuthProvider>(context).token;
+    String accessToken = Provider.of<AuthProvider>(context).accessToken;
+    String refreshToken = Provider.of<AuthProvider>(context).refreshToken;
 
     Widget dataRow(String label, String value) {
       return Column(
@@ -38,7 +39,8 @@ class Dashboard extends StatelessWidget {
               style: Styles.h1,
             ),
             SizedBox(height: 45),
-            dataRow('Token', token),
+            dataRow('Access Token', accessToken),
+            dataRow('Refresh Token', refreshToken),
             SizedBox(height: 30),
             StyledFlatButton(
               'Log Out',

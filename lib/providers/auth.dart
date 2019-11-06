@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -10,17 +9,17 @@ enum Status { Uninitialized, Authenticated, Authenticating, Unauthenticated }
 
 class AuthProvider with ChangeNotifier {
   Status _status = Status.Uninitialized;
-  String _token;
+  String _accessToken;
   String _refreshToken;
   NotificationText _notification;
 
   Status get status => _status;
-  String get token => _token;
+  String get accessToken => _accessToken;
   String get refreshToken => _refreshToken;
   NotificationText get notification => _notification;
 
   // Update to use with your own Okta app.
-  final String api = 'https://nanoapp.oktapreview.com/oauth2/auso4gulrq9ulEb7O0h7/v1/token';
+  final String api = 'https://nanoapp.oktapreview.com';
   final String applicationId = 'auso4gulrq9ulEb7O0h7';
   final String audienceId = '0oao49otuaQgpXWtD0h7';
 
@@ -28,9 +27,8 @@ class AuthProvider with ChangeNotifier {
   final apiClient = ApiClient();
 
   initAuthProvider() async {
-    String token = await getToken();
-    if (token != null) {
-      _token = token;
+    await hydrateTokens();
+    if (_accessToken != null && _refreshToken != null) {
       _status = Status.Authenticated;
     } else {
       _status = Status.Unauthenticated;
@@ -43,17 +41,6 @@ class AuthProvider with ChangeNotifier {
     _notification = null;
     notifyListeners();
 
-    Map<String, String> body;
-    String authnApi = '$api/api/v1/authn';
-
-    body = {
-      "username": email,
-      "password": password
-    };
-
-    final response = await apiClient.post(api, body: json.encode(body));
-
-
     String tokenApi = '$api/oauth2/$applicationId/v1/token';
 
     Map<String, String> body = {
@@ -64,7 +51,7 @@ class AuthProvider with ChangeNotifier {
       "password": password
     };
 
-    final response = await apiClient.post(api, body: body);
+    final response = await apiClient.post(tokenApi, body: body);
 
     print(json.decode(response.body));
 
@@ -72,12 +59,13 @@ class AuthProvider with ChangeNotifier {
       Map<String, dynamic> apiResponse = json.decode(response.body);
 
       _status = Status.Authenticated;
-      _token = apiResponse['access_token'];
+      _accessToken = apiResponse['access_token'];
       _refreshToken = apiResponse['refresh_token'];
 
       // Save values to local storage.
       SharedPreferences storage = await SharedPreferences.getInstance();
-      await storage.setString('token', _token);
+      await storage.setString('access_token', _accessToken);
+      await storage.setString('refresh_token', _refreshToken);
 
       notifyListeners();
       return true;
@@ -115,10 +103,13 @@ class AuthProvider with ChangeNotifier {
     return false;
   }
 
-  Future<String> getToken() async {
+  // Checks for tokens in local storage and loads them into state.
+  Future<void> hydrateTokens() async {
     SharedPreferences storage = await SharedPreferences.getInstance();
-    String token = storage.getString('token');
-    return token;
+    String accessToken = storage.getString('accessToken');
+    String refreshToken = storage.getString('refreshToken');
+    _accessToken = accessToken;
+    _refreshToken = refreshToken;
   }
 
   logOut([bool tokenExpired = false]) async {
