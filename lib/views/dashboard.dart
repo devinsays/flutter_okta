@@ -29,10 +29,8 @@ class Dashboard extends StatelessWidget {
       ),
       body: Padding(
         padding: EdgeInsets.fromLTRB(30.0, 0.0, 30.0, 0.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+        child: ListView(
+          children: <Widget>[
             Text(
               'Okta Information',
               textAlign: TextAlign.center,
