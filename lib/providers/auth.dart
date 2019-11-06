@@ -50,7 +50,7 @@ class AuthProvider with ChangeNotifier {
       "password": password
     };
 
-    final response = await apiClient.post(api, body: json.encode(body));
+    final response = await apiClient.post(api, body: body);
 
     print(json.decode(response.body));
 
