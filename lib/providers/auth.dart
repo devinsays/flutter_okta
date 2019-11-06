@@ -21,7 +21,8 @@ class AuthProvider with ChangeNotifier {
 
   // Update to use with your own Okta app.
   final String api = 'https://nanoapp.oktapreview.com/oauth2/auso4gulrq9ulEb7O0h7/v1/token';
-  final String clientId = '0oao49otuaQgpXWtD0h7';
+  final String applicationId = 'auso4gulrq9ulEb7O0h7';
+  final String audienceId = '0oao49otuaQgpXWtD0h7';
 
   // Creates a client with application/json headers set.
   final apiClient = ApiClient();
@@ -42,10 +43,23 @@ class AuthProvider with ChangeNotifier {
     _notification = null;
     notifyListeners();
 
+    Map<String, String> body;
+    String authnApi = '$api/api/v1/authn';
+
+    body = {
+      "username": email,
+      "password": password
+    };
+
+    final response = await apiClient.post(api, body: json.encode(body));
+
+
+    String tokenApi = '$api/oauth2/$applicationId/v1/token';
+
     Map<String, String> body = {
       "grant_type": "password",
       "scope": "openid offline_access",
-      "client_id": clientId,
+      "client_id": audienceId,
       "username": email,
       "password": password
     };
