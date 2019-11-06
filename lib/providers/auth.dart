@@ -21,7 +21,7 @@ class AuthProvider with ChangeNotifier {
   NotificationText get notification => _notification;
 
   // Update to use with your own Okta app.
-  final String api = 'https://nanoapp.okta.com/api/v1/authn';
+  final String api = 'https://nanoapp-admin.oktapreview.com/api/v1/authn';
 
   // Creates a client with application/json headers set.
   final apiClient = ApiClient();
